@@ -146,37 +146,32 @@ print(currentTimeStamp + " [Info] Using Wallet Address: " + walletAddress)
 def Buy(tokenAddress, tokenSymbol, amountToBuy):
     try:
         if(tokenAddress != None):
+
             tokenToBuy = web3.toChecksumAddress(tokenAddress)
             spend = web3.toChecksumAddress(
-                "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")  # wbnb contract address
+                "0xe9e7cea3dedca5984780bafc599bd69add087d56")  # BUSD contract address
             contract = web3.eth.contract(
                 address=pancakeSwapRouterAddress, abi=pancakeABI)
             nonce = web3.eth.get_transaction_count(walletAddress)
             start = time.time()
-            pancakeswap2_txn = contract.functions.swapExactETHForTokens(
-                0,  # Set to 0 or specify min number of tokens - setting to 0 just buys X amount of tokens for whatever BNB specified
-                [spend, tokenToBuy],
-                walletAddress,
-                (int(time.time()) + transactionRevertTime)
-            ).buildTransaction({
-                'from': walletAddress,
-                # This is the Token(BNB) amount you want to Swap from
-                'value': web3.toWei(float(amountToBuy), 'ether'),
-                'gas': gasAmount,
-                'gasPrice': web3.toWei(gasPrice, 'gwei'),
-                'nonce': nonce,
-            })
+            amountToBuy = web3.toWei(amountToBuy, 'ether')
+            print(amountToBuy)
+
+            # swapTokensForExactTokens
+            pancakeswap2_txn = contract.functions.swapExactTokensForTokens(amountToBuy,0, [spend, tokenToBuy], walletAddress, (int(time.time()) + transactionRevertTime)).buildTransaction({'from': walletAddress,'value': 0, 'gas': gasAmount, 'gasPrice': web3.toWei(gasPrice, 'gwei'), 'nonce': nonce, })
 
             try:
+                print("Buying the token...")
+
                 signed_txn = web3.eth.account.sign_transaction(
                     pancakeswap2_txn, walletPrivateKey)
                 tx_token = web3.eth.send_raw_transaction(
                     signed_txn.rawTransaction)  # BUY THE TOKEN
+
+
             except:
                 print(style.RED + currentTimeStamp + " Transaction failed.")
                 print("")  # line break: move onto scanning for next token
-
-                pass
 
             txHash = str(web3.toHex(tx_token))
 
@@ -190,7 +185,7 @@ def Buy(tokenAddress, tokenSymbol, amountToBuy):
 
             if(txResult == "1"):
                 print(style.GREEN + currentTimeStamp + " [BUY] Successfully bought $" + tokenSymbol +
-                      " for " + style.BLUE + str(amountToBuy) + style.GREEN + " BNB - TX ID: ", txHash)
+                      " for " + style.BLUE + str(amountToBuy) + style.GREEN + " BUSD - TX ID: ", txHash)
 
             else:
                 print(style.RED + currentTimeStamp +
@@ -203,51 +198,15 @@ def Buy(tokenAddress, tokenSymbol, amountToBuy):
     except Exception as ex:
         print(style.RED + currentTimeStamp +
               " [ERROR] Unknown error with buying token: ")
-
-# buyTokenThread = threading.Thread(target=Buy(None, None))
-# buyTokenThread.start()
+        print(ex)
 
 
-# Select token to buy
-# tokenToBuy = input("Enter token address to buy: ")
-
-# tokenToBuy = args.token
-
-tokenToBuy = "0xf0e5096edf070dc9b1bc8911d63c4e448a3e14c6"
+tokenToBuy = "0x50332bdca94673f33401776365b66cc4e81ac81d"
 tokenToBuy = web3.toChecksumAddress(tokenToBuy)
 
-# tokenSymbol = input("Enter token symbol to buy: ")
 tokenSymbol = "TOKEN"
 
-# amountToBuy = input("Enter amount to buy: ")
-# amountToBuy = args.amount
-
-amountToBuy = "0.005"
-
+amountToBuy = "0.9"
 amountToBuy = float(amountToBuy)
 
-# Buy(tokenToBuy, tokenSymbol, amountToBuy)
-
-choice = 1
-
-
-while choice == 1:
-
-    print("tokenToBuy: " + tokenToBuy)
-    print("amountToBuy: ",str(amountToBuy))
-
-    Buy(tokenToBuy, tokenSymbol, amountToBuy)
-
-    print(style.GREEN + currentTimeStamp +
-          " [INFO] Waiting for next transaction...")
-
-    choice = input("Enter 1 to buy again,2 to new amount 0 to exit: ")
-    choice = int(choice)
-
-    if choice == 2:
-        amountToBuy = input("Enter amount to buy: ")
-        amountToBuy = float(amountToBuy)
-        choice = 1
-
-if choice == 0:
-    sys.exit()
+Buy(tokenToBuy, tokenSymbol, amountToBuy)
